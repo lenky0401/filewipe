@@ -7,4 +7,4 @@ debug: filewipe.h filewipe.cpp
 	g++ -D__DEBUG -g -O0 -o filewipe -Wall filewipe.cpp
 
 clean:
-	rm *.o filewipe libfilewipe.a libfilewipe.so
+	rm -f *.o filewipe libfilewipe.a libfilewipe.so

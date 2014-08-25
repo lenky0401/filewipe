@@ -53,13 +53,6 @@
 
 #include <sys/stat.h>
 
-/* exit codes */
-#define SUCCESS 0
-#define FAILED -1
-#define NOT_SUPPORT_TYPE -2
-#define PATH_NAME_TOO_LONG -3
-#define STAT_FAILED -4
-#define WIPE_WRITE_FAILED -5
 
 static int verbose = 0;
 
