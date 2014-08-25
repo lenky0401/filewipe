@@ -1,0 +1,94 @@
+# Makefile for wipe
+
+VERSION='2.3.1'
+DOCS='LICENSE copyright CHANGES README TODO INSTALL TESTING'
+
+CC=@CC@
+CFLAGS=@CFLAGS@ -I@srcdir@ -D@OSTYPE@ $(DEFINES)
+DEBUG=@DEBUG@ -I@srcdir@ -D@OSTYPE@ $(DEFINES)
+
+LIBS=@LIBS@
+
+srcdir=@srcdir@
+
+BIN=@bin@
+SRC=@src@
+REQ=@req@
+
+bindir=@bindir@
+sbindir=@sbindir@
+datadir=@datadir@
+mandir=@mandir@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+BIN_OUT=$(srcdir)/$(BIN)
+
+INSTALL=@INSTALL@
+INSTALL_BIN=@INSTALL@ -m 0755
+INSTALL_HOME=mv -f
+
+all:	$(REQ) $(BIN)
+
+$(BIN):	main.o wipe.o rand.o dir.o file.o blkdev.o lock.o text.o str.o percent.o prompt.o io.o mt.o
+	$(CC) $(LIBS) *.o -o $@
+
+
+# restores everything to a pre-configured state
+cleanconf:
+	# remove generated files
+	rm -f config.h
+	# remove cache, etc.
+	rm -f config.log config.cache config.status config.h.in
+
+# run this before compiling or packaging for distribution
+dist:	cvsclean
+	# build autoconf files
+	autoheader
+	autoconf
+
+map:	$(BIN_OUT)
+	nm $(BIN_OUT) | sort > $(BIN_OUT).map
+
+info:   $(BIN_OUT)
+	@file $(BIN_OUT)
+	@echo
+	@echo "Linked:"
+	@ldd $(BIN_OUT)
+
+install: $(BIN_OUT)
+	$(INSTALL_BIN) -d $(bindir)
+	$(INSTALL_BIN) -s $(BIN_OUT) $(bindir)
+	$(INSTALL) -d $(mandir)/man1
+	$(INSTALL) -o root -m 0644 wipe.1 $(mandir)/man1/
+	rm -rf $(datadir)/doc/wipe*
+	$(INSTALL) -d $(datadir)/doc/wipe
+
+	for file in $(DOCS); do \
+		$(INSTALL) -o root -m 0644 $$file $(datadir)/doc/wipe/; \
+	done
+
+install_home: $(BIN_OUT)
+	strip $(BIN_OUT)
+	$(INSTALL_HOME) $(BIN_OUT) ~/bin/wipe
+	chmod 0755 ~/bin/wipe
+
+uninstall:
+	rm -f $(bindir)/$(BIN) $(mandir)/man1/wipe.1 $(datadir)/doc/wipe/
+
+remove:
+	rm -f /usr/local/bin/wipe /usr/local/man/man1/wipe.1 /usr/local/share/man/man1/wipe.1
+	rm -rf /usr/local/doc/wipe* /usr/local/share/doc/wipe*
+	rm -f /usr/bin/wipe /usr/man/man1/wipe.1 /usr/share/man/man1/wipe.1
+	rm -rf /usr/doc/wipe* /usr/share/doc/wipe*
+	rm -f ~/bin/wipe ~/man/man1/wipe.1 ~/share/man/man1/wipe.1
+	rm -rf ~/doc/wipe* ~/share/doc/wipe*
+
+clean:
+	rm -f *core* $(BIN_OUT) $(srcdir)/*.o *~
+
+cvsciclean: clean cleanconf
+	rm -f configure Makefile
+
+cvsclean: cvsciclean
+	rm -rf .cvsignore CVS

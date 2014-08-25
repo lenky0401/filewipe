@@ -1,0 +1,129 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(wipe.c)
+AC_CONFIG_HEADER(config.h)
+
+AC_SUBST(src)
+AC_SUBST(req)
+AC_SUBST(obj)
+AC_SUBST(bin)
+AC_SUBST(DEBUG)
+srcdir="."
+src=wipe.c
+req="config.h require.h debug.h"
+obj=wipe.o
+bin=wipe
+
+fullCFLAGS=""
+wallCFLAGS=""
+pendanticCFLAGS=""
+tempCFLAGS=""
+temp2CFLAGS=""
+checkCFLAGS=""
+optCFLAGS=""
+#CFLAGS="-g -Wall -Werror -ansi -pedantic -O2 -finline-functions -ffast-math -fomit-frame-pointer"
+
+AC_CANONICAL_SYSTEM
+
+AC_SUBST(OSTYPE)
+OSTYPE=`echo $build_os | sed 's/\..*$//g' | sed 's/-.*//g' | tr [[a-z]] [[A-Z]]`
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_ISC_POSIX
+AC_PROG_GCC_TRADITIONAL
+AC_PROG_INSTALL
+
+dnl Compilation tests
+AC_MSG_CHECKING([whether the C compiler accepts -pipe])
+CFLAGS="-pipe"
+AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); tempCFLAGS="$CFLAGS",AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING([whether the C compiler accepts -g])
+CFLAGS="-g"
+AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); debugCFLAGS="$CFLAGS",AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING([whether the C compiler accepts -O0])
+CFLAGS="-O0"
+AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); debugCFLAGS="$debugCFLAGS $CFLAGS",AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING([whether the C compiler accepts -O2])
+CFLAGS="-O2"
+AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); tempCFLAGS="$tempCFLAGS $CFLAGS",AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING([whether the C compiler accepts -ansi])
+CFLAGS="-ansi"
+AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); checkCFLAGS="$checkCFLAGS $CFLAGS",AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING([whether the C compiler accepts -pedantic])
+CFLAGS="-pedantic"
+AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); checkCFLAGS="$checkCFLAGS $CFLAGS",AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING([whether the C compiler accepts -Wall])
+CFLAGS="-Wall"
+AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); wallCFLAGS="$CFLAGS",AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING([whether the C compiler accepts -Werror])
+CFLAGS="-Werror"
+AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); pedanticCFLAGS="$wallCFLAGS $CFLAGS",AC_MSG_RESULT(no))
+
+#AC_MSG_CHECKING([whether the C compiler accepts -ffast-math])
+#CFLAGS="-ffast-math"
+#AC_TRY_COMPILE(,,AC_MSG_RESULT(yes); optCFLAGS="$optCFLAGS $CFLAGS",AC_MSG_RESULT(no))
+
+AC_ARG_ENABLE(wall,
+	[  --enable-wall        compile with -ansi -pedantic -Wall -Werror],
+	[with_wall=$enableval],
+	[with_wall=no])
+test "$with_wall" = "yes" && fullCFLAGS="$checkCFLAGS $wallCFLAGS $pendanticCFLAGS $fullCFLAGS"
+
+temp2CFLAGS="$tempCFLAGS $optCFLAGS"
+
+AC_ARG_ENABLE(debug,
+	[  --enable-debug       compile for debugger compatibility],
+	[with_debug=$enableval],
+	[with_debug=no])
+test "$with_debug" = "yes" && temp2CFLAGS="$wallCFLAGS $debugCFLAGS"
+
+AC_ARG_ENABLE(efence,
+	[  --enable-efence      debug build + link with electric fence],
+	[with_efence=$enableval],
+	[with_efence=no])
+test "$with_efence" = "yes" && temp2CFLAGS="$debugCFLAGS" && LIBS="-lefence"
+
+DEBUG="$debugCFLAGS $fullCFLAGS"
+fullCFLAGS="$temp2CFLAGS $fullCFLAGS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+CFLAGS="$checkCFLAGS -D__USE_BSD -D_BSD_SOURCE -D__USE_POSIX -D_POSIX_SOURCE -D_POSIX_MAPPED_FILES"
+
+dnl Checks for libraries.
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(unistd.h stdint.h fcntl.h memory.h linux/fs.h sys/mount.h sys/disklabel.h sys/ioctl.h sys/file.h sys/stat.h sys/time.h sys/types.h getopt.h errno.h termio.h termios.h linux/mtio.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+dnl AC_SYS_LARGEFILE doesn't work, i give up
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_HEADER_STAT
+
+dnl for solaris
+dnl AC_CHECK_TYPES(u_int32_t)
+dnl AC_CHECK_TYPE(uint32_t, AC_DEFINE(HAVE_UINT32_T, 1), , )
+
+dnl Checks for library functions.
+AC_FUNC_MMAP
+AC_CHECK_FUNCS(getopt strnlen bzero memset memcpy realloc fchmod ioctl fcntl lockf flock fsync fdatasync unlink rmdir remove rename dirfd)
+
+dnl commented out, it's not defining
+dnl to avoid cache, check row the second time
+dnl AC_CHECK_MEMBER(struct winsize.ws_col, AC_DEFINE(HAVE_WINSIZE), , #include <sys/ioctl.h>)
+dnl AC_CHECK_MEMBER(struct winsize.ws_row, AC_DEFINE(HAVE_WINSIZE), , #include <termio.h>)
+
+dnl Done with tests
+
+CFLAGS="$fullCFLAGS"
+
+AC_OUTPUT(Makefile)
